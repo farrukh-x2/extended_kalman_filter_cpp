@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
     GroundTruthPackage gt_package;
     istringstream iss(line);
     long timestamp;
-    std::cout<<"Data Read"<<std::endl;
+    //std::cout<<"Data Read"<<std::endl;
     // reads first element from the current line
     iss >> sensor_type;
     if (sensor_type.compare("L") == 0) {
@@ -92,9 +92,23 @@ int main(int argc, char* argv[]) {
       iss >> timestamp;
       meas_package.timestamp_ = timestamp;
       measurement_pack_list.push_back(meas_package);
+
+      // read ground truth data to compare later
+      float x_gt;
+      float y_gt;
+      float vx_gt;
+      float vy_gt;
+      iss >> x_gt;
+      iss >> y_gt;
+      iss >> vx_gt;
+      iss >> vy_gt;
+      gt_package.gt_values_ = VectorXd(4);
+      gt_package.gt_values_ << x_gt, y_gt, vx_gt, vy_gt;
+      gt_pack_list.push_back(gt_package);
+
     } else if (sensor_type.compare("R") == 0) {
       // RADAR MEASUREMENT
-
+    /*
       // read measurements at this timestamp
       meas_package.sensor_type_ = MeasurementPackage::RADAR;
       meas_package.raw_measurements_ = VectorXd(3);
@@ -108,20 +122,10 @@ int main(int argc, char* argv[]) {
       iss >> timestamp;
       meas_package.timestamp_ = timestamp;
       measurement_pack_list.push_back(meas_package);
+      */
     }
 
-    // read ground truth data to compare later
-    float x_gt;
-    float y_gt;
-    float vx_gt;
-    float vy_gt;
-    iss >> x_gt;
-    iss >> y_gt;
-    iss >> vx_gt;
-    iss >> vy_gt;
-    gt_package.gt_values_ = VectorXd(4);
-    gt_package.gt_values_ << x_gt, y_gt, vx_gt, vy_gt;
-    gt_pack_list.push_back(gt_package);
+
   }
 
   // Create a Fusion EKF instance
