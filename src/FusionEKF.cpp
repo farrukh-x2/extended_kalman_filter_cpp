@@ -80,29 +80,30 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     // first measurement
     cout << "EKF: " << endl;
     ekf_.x_ = VectorXd(4);
-    ekf_.x_ << 1, 1, 1, 1;
+    //ekf_.x_ << 1, 1, 1, 1; # no need for this anymore, proper initialization below
 
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
       /**
       Convert radar from polar to cartesian coordinates and initialize state.
       */
+      float ro = measurement_pack.raw_measurements_(0);
+      float phi = measurement_pack.raw_measurements_(1);
+      //float phi_dot = measurement_pack.raw_measurements_(2);
+
+      ekf_.x_ << (cos(phi) * ro) + 0.00000001, //dx
+                 (sin(phi) * ro) + 0.00000001, //dy
+                 0, //try later cos(phi_dot) * ro, //Vx
+                 0; //try later sin(phi_dot) * ro;
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
       /**
       Initialize state.
       */
-      ekf_.x_ << measurement_pack.raw_measurements_[0],
-                 measurement_pack.raw_measurements_[1],
+      ekf_.x_ << measurement_pack.raw_measurements_[0] + 0.00000001,
+                 measurement_pack.raw_measurements_[1] + 0.00000001,
                  0,
                  0;
 
-
-
-      //ekf_.R_ = MatrixXd(2, 2);
-      ekf_.R_ = R_laser_;
-
-      //ekf_.H_ = MatrixXd(2,4);
-      ekf_.H_ = H_laser_;
 
     }
 
@@ -155,8 +156,38 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
     // Radar updates
+
+  float ro = measurement_pack.raw_measurements_(0);
+  float phi = measurement_pack.raw_measurements_(1);
+  float ro_dot = measurement_pack.raw_measurements_(2);
+
+  VectorXd x_state(4);
+  x_state << cos(phi) * ro, //dx
+             sin(phi) * ro, //dy
+             cos(phi) * ro_dot, //Vx
+             sin(phi) * ro_dot; //Vy
+
+  Tools tools;
+  //cout<<"ro phi"<<ro << " "<< phi<<endl;
+  //cout<<"Jacobian Input: "<<x_state<<endl;
+  Hj_ = tools.CalculateJacobian(x_state);
+  //cout<<"Jacobian Output: "<<Hj_<<endl;
+
+  ekf_.R_ = R_radar_;
+
+  ekf_.H_ = Hj_;
+
+  ekf_.UpdateEKF(measurement_pack.raw_measurements_);
+
   } else {
     // Laser updates
+
+  //ekf_.R_ = MatrixXd(2, 2);
+  ekf_.R_ = R_laser_;
+
+  //ekf_.H_ = MatrixXd(2,4);
+  ekf_.H_ = H_laser_;
+
   ekf_.Update(measurement_pack.raw_measurements_);
   //cout<<"Measurement Updated"<< endl;
   }
