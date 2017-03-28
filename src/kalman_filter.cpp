@@ -53,9 +53,20 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
     MatrixXd K = PHt * Si;
     //std::cout<< "z: "<< z << std::endl;
     VectorXd hHt_x = VectorXd(3);
-    hHt_x << sqrt((x_(0)*x_(0)) + (x_(1)*x_(1))),
+
+    if (fabs(x_(0)) < 0.0001)
+       x_(0) = 0.0001;
+
+    if (fabs(x_(1)) < 0.0001)
+       x_(1) = 0.0001;
+
+    float px2 = x_(0)*x_(0);
+    float py2 = x_(1)*x_(1);
+    float sqrt_px2_py2 = sqrt(px2 + py2);
+
+    hHt_x << sqrt_px2_py2,
              atan((x_(1)/x_(0))),
-             (x_(2)*x_(0) + x_(3)*x_(1))/ (sqrt((x_(0)*x_(0)) + (x_(1)*x_(1))));
+             (x_(2)*x_(0) + x_(3)*x_(1))/ (sqrt_px2_py2);
     //std::cout<< "hHt_x: "<< hHt_x << std::endl;
 
     VectorXd new_z = VectorXd(3);
